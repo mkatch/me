@@ -1,0 +1,8 @@
+{
+	"name": "mkacz.me",
+	"private": true,
+	"version": "0.0.0",
+	"scripts": {
+		"build-polysim": "cd ./submodules/polysim-ts && npm run build && cd ../../ && rm -rf polysim && mkdir polysim && cp -r ./submodules/polysim-ts/dist/* ./polysim/"
+	}
+}
