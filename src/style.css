@@ -1,3 +1,159 @@
 html {
 	font-family: sans-serif;
+	overflow-y: scroll;
+	overflow-x: auto;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+
+	--scroll-top: 0px;
+	--t-collapse: 0;
+	--t-expand: calc(1 - var(--t-collapse));
+
+	--title-font-size-expanded: 50px;
+	--title-font-size-collapsed: 30px;
+	--header-height-expanded: calc(min(70vh, 600px));
+	--header-height-collapsed: 50px;
+}
+
+header {
+	display: flex;
+	position: sticky;
+	top: 0;
+	overflow: visible;
+	z-index: 100;
+}
+
+nav {
+	position: absolute;
+	top: 0;
+	right: 0;
+	height: var(--header-height-collapsed);
+}
+
+.header-content {
+	display: flex;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: calc(max(var(--header-height-collapsed), var(--header-height-expanded) - var(--scroll-top)));
+	align-items: center;
+}
+
+#header-background {
+	position: sticky;
+	top: calc(var(--header-height-collapsed) - var(--header-height-expanded));
+	height: var(--header-height-expanded);
+	background: lightcoral;
+	border-bottom: 1px solid black;
+}
+
+.title-row {
+	width: 100%;
+	font-size: calc(var(--t-expand) * var(--title-font-size-expanded) + var(--t-collapse) * var(--title-font-size-collapsed));
+}
+
+.title-row .column-content {
+	max-width: calc(var(--t-expand) * 800px + var(--t-collapse) * 100%);
+}
+
+h1 {
+	font-size: inherit;
+	margin: 0;
+}
+
+h2 {
+	font-size: 1.5rem;
+}
+
+.tabs {
+	display: flex;
+	height: 1em;
+	direction: rtl;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	font-family: monospace;
+	overflow: hidden;
+	user-select: none;
+}
+
+.tabs>:not(:first-child) {
+	margin-right: 0.4em;
+}
+
+#name .pre-cursor {
+	position: relative;
+}
+
+#name .cursor {
+	color: white;
+	background: black;
+}
+
+#name .select {
+	background: yellow;
+}
+
+@keyframes blink {
+	0% {
+		opacity: 0.5;
+	}
+
+	50% {
+		opacity: 0.3;
+	}
+
+	100% {
+		opacity: 0.5;
+	}
+}
+
+#name .pre-cursor::after {
+	content: '';
+	animation: blink 2s infinite;
+	background: blue;
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 0.1em;
+	opacity: 0.5;
+}
+
+#name .highlight {
+	background: red;
+}
+
+section {
+	margin-top: 20px;
+}
+
+.columns {
+	display: flex;
+	align-items: baseline;
+}
+
+.column-margin {
+	flex: 1;
+}
+
+.tab:not(:first-child) {
+	width: 0;
+	min-width: 0;
+}
+
+.column-margin-right {
+	min-width: 10px;
+}
+
+.column-content {
+	flex: 0 1 100%;
+	outline: 1px solid blue;
+	max-width: 800px;
+}
+
+p {
+	height: 400px;
 }
