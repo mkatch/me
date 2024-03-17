@@ -3,6 +3,7 @@ html {
 	font-size: 8px;
 	overflow-y: scroll;
 	overflow-x: auto;
+	scroll-behavior: smooth;
 }
 
 body {
@@ -30,9 +31,36 @@ header {
 
 nav {
 	position: absolute;
+	display: flex;
+	align-items: center;
 	top: 0;
 	right: 0;
 	height: var(--header-height-collapsed);
+	font-size: 2rem;
+}
+
+nav ul {
+	display: flex;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+
+nav li {
+	display: flex;
+	align-items: center;
+	padding: 0 1.5rem;
+}
+
+nav li:hover {
+	background: rgba(0, 0, 0, 0.1);
+
+}
+
+nav a {
+	text-decoration: none;
+	color: white;
 }
 
 .header-content {
@@ -162,7 +190,6 @@ section {
 
 .column-main {
 	flex: 0 1 100%;
-	outline: 1px solid blue;
 	max-width: var(--main-column-max-width);
 }
 
