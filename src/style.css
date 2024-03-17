@@ -1,5 +1,6 @@
 html {
 	font-family: sans-serif;
+	font-size: 8px;
 	overflow-y: scroll;
 	overflow-x: auto;
 }
@@ -12,10 +13,11 @@ body {
 	--t-collapse: 0;
 	--t-expand: calc(1 - var(--t-collapse));
 
-	--title-font-size-expanded: 50px;
-	--title-font-size-collapsed: 30px;
-	--header-height-expanded: calc(min(70vh, 600px));
-	--header-height-collapsed: 50px;
+	--main-column-max-width: 100rem;
+	--title-font-size-expanded: 8rem;
+	--title-font-size-collapsed: 4rem;
+	--header-height-expanded: calc(min(70vh, 80rem));
+	--header-height-collapsed: 7rem;
 }
 
 header {
@@ -35,11 +37,13 @@ nav {
 
 .header-content {
 	display: flex;
+	flex-direction: column;
 	position: absolute;
 	top: 0;
 	width: 100%;
 	height: calc(max(var(--header-height-collapsed), var(--header-height-expanded) - var(--scroll-top)));
-	align-items: center;
+	justify-content: center;
+	overflow: hidden;
 }
 
 #header-background {
@@ -50,22 +54,34 @@ nav {
 	border-bottom: 1px solid black;
 }
 
-.title-row {
-	width: 100%;
+h1,
+header .tabs {
 	font-size: calc(var(--t-expand) * var(--title-font-size-expanded) + var(--t-collapse) * var(--title-font-size-collapsed));
 }
 
-.title-row .column-content {
-	max-width: calc(var(--t-expand) * 800px + var(--t-collapse) * 100%);
+header .column-main {
+	max-width: calc(var(--t-expand) * var(--main-column-max-width) + var(--t-collapse) * 100%);
 }
 
 h1 {
-	font-size: inherit;
 	margin: 0;
 }
 
+.subtitle-container {
+	display: flex;
+	align-items: center;
+	font-size: 5rem;
+	height: calc(var(--t-expand) * 3 * 5rem);
+	opacity: var(--t-expand);
+}
+
+.subtitle {
+	margin: 0;
+	font-style: italic;
+}
+
 h2 {
-	font-size: 1.5rem;
+	font-size: 3rem;
 }
 
 .tabs {
@@ -127,7 +143,7 @@ h2 {
 }
 
 section {
-	margin-top: 20px;
+	margin-top: 3rem;
 }
 
 .columns {
@@ -135,25 +151,21 @@ section {
 	align-items: baseline;
 }
 
-.column-margin {
+.column-left,
+.column-right {
 	flex: 1;
 }
 
-.tab:not(:first-child) {
-	width: 0;
-	min-width: 0;
+.column-right {
+	min-width: 1rem;
 }
 
-.column-margin-right {
-	min-width: 10px;
-}
-
-.column-content {
+.column-main {
 	flex: 0 1 100%;
 	outline: 1px solid blue;
-	max-width: 800px;
+	max-width: var(--main-column-max-width);
 }
 
-p {
+section p {
 	height: 400px;
 }

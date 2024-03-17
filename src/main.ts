@@ -2,7 +2,7 @@ import './style.css'
 
 const headerBackgroundElement = document.getElementById('header-background')!;
 const navElement = document.getElementsByTagName('nav')[0]!;
-const nameElement = document.getElementById('name')!;
+const titleElement = document.getElementById('title')!;
 
 const nameAnimation = [
 	'|',
@@ -70,7 +70,7 @@ function setNameAnimationFrame(frameIndex: number) {
 		.replace(/\]/, '</span>')
 		.replace(/\|(.)/, '<span class="cursor">$1</span>')
 		.replace(/\|$/, '<span class="cursor">&nbsp;</span>');
-	nameElement.innerHTML = gg;
+	titleElement.innerHTML = gg;
 	nameAnimationFrameIndex = frameIndex;
 }
 
