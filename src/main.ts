@@ -2,6 +2,7 @@ import './style.css'
 
 const headerBackgroundElement = document.getElementById('header-background')!;
 const navElement = document.getElementsByTagName('nav')[0]!;
+const navIndicatorElement = document.getElementById('nav-indicator')!;
 const titleElement = document.getElementById('title')!;
 
 const nameAnimation = [
@@ -95,3 +96,13 @@ function onAnimationFrame() {
 	window.requestAnimationFrame(onAnimationFrame);
 };
 window.requestAnimationFrame(onAnimationFrame);
+
+navElement.addEventListener('click', e => {
+	const target = e.target;
+	if (!(target instanceof HTMLAnchorElement)) {
+		return;
+	}
+	const r = target.getBoundingClientRect();
+	navIndicatorElement.style.left = CSS.px(r.left).toString();
+	navIndicatorElement.style.width = CSS.px(r.width).toString();
+});

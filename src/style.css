@@ -48,19 +48,40 @@ nav ul {
 }
 
 nav li {
+	position: relative;
+	display: flex;
+}
+
+nav a {
 	display: flex;
 	align-items: center;
 	padding: 0 1.5rem;
 }
 
-nav li:hover {
+nav a:hover {
 	background: rgba(0, 0, 0, 0.1);
-
 }
 
 nav a {
 	text-decoration: none;
 	color: white;
+}
+
+.nav-indicator-host {
+	position: sticky;
+	top: var(--header-height-collapsed);
+	height: 0;
+}
+
+#nav-indicator {
+	position: absolute;
+	top: 0;
+	left: 100%;
+	width: 0;
+	background: red;
+	height: 1rem;
+
+	transition: left 0.5s, width 0.5s;
 }
 
 .header-content {
