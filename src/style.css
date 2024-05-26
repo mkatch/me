@@ -1,3 +1,7 @@
 html {
 	font-family: sans-serif;
 }
+
+#demo-host {
+	height: 60vh;
+}
