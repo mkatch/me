@@ -1,27 +1,44 @@
 const DEG_TO_RAD = Math.PI / 180
 
-export type Vec3Data = [x: number, y: number, z: number]
-export type Vec3 = Vec3Data & { readonly "": unique symbol }
-export function Vec3(...data: Vec3Data): Vec3 {
+/** Undecorated shape of {@link Vec3} */
+export type Vec3Shape = [x: number, y: number, z: number]
+
+/** 3D cartesian vector. */
+export type Vec3 = Vec3Shape & { readonly "": unique symbol }
+export function Vec3(...data: Vec3Shape): Vec3 {
 	return data as Vec3
 }
 
-export type MatAData = [
+/** Undecorated shape of {@link MatA}. */
+export type MatAShape = [
 	number, number, number, number,
 	number, number, number, number,
 	number, number, number, number,
 	     0,      0,      0,      1,
 ]
-export type MatA = Mat4 & MatAData
-export function MatA(data: MatAData): MatA {
+
+/**
+ * Affine transformation matrix.
+ *
+ * Like {@link Mat4}, but the last row is always `[0, 0, 0, 1]`. Can express
+ * all linear transformations, translations, and their compositions.
+ **/
+export type MatA = Mat4 & MatAShape
+export function MatA(data: MatAShape): MatA {
 	return data as MatA
 }
 
 export namespace MatA {
+	/**
+	 * Create or modify an affine transofrmation {@link MatA} with a chainable API.
+	 * 
+	 * @param A Initial matrix, defaults to a new identity matrix. The subsequent operations will be applied to this matrix in place.
+	 */
 	export function compose(A: MatA = eye()): MatAComposer {
 		return new MatAComposer(A)
 	}
 
+	/** Creates a new identity affine transformation {@link MatA}. */
 	export function eye(): MatA {
 		return MatA([
 			1, 0, 0, 0,
@@ -31,6 +48,7 @@ export namespace MatA {
     ])
 	}
 
+	/** Pre-applies a translation by vector.  */
 	export function translate(A: MatA, u: Vec3): MatA {
 		A[ 3] += u[0]
 		A[ 7] += u[1]
@@ -38,31 +56,48 @@ export namespace MatA {
 		return A
 	}
 
+	/** Creates a new transformation that represents translation by vector. */
 	export function translation(u: Vec3): MatA {
 		return translate(eye(), u)
 	}
 
-	
+	/** Multiplies the first row by a scalar. */
 	export function scaleX(A: MatA, s: number): void {
 		A[ 0] *= s; A[ 1] *= s; A[ 2] *= s; A[ 3] *= s
 	}
 
-
+	/** Multiplies the second row by a scalar. */
 	export function scaleY(A: MatA, s: number): void {
 		A[ 4] *= s; A[ 5] *= s; A[ 6] *= s; A[ 7] *= s
 	}
 
-	
+	/** Multiplies the second row by a scalar. */
 	export function scaleZ(A: MatA, s: number): void {
 		A[ 8] *= s; A[ 9] *= s; A[10] *= s; A[11] *= s
 	}
 
+	/** Multiplies the entire matrix by a scalar. */
 	export function scale(A: MatA, s: number): void {
 		A[ 0] *= s; A[ 1] *= s; A[ 2] *= s; A[ 3] *= s
 		A[ 4] *= s; A[ 5] *= s; A[ 6] *= s; A[ 7] *= s
 		A[ 8] *= s; A[ 9] *= s; A[10] *= s; A[11] *= s
 	}
 
+	/** Multiplies each row by the respective vector component scalars. */
+	export function scaleVector(A: MatA, u: Vec3): void {
+		const sx = u[0], sy = u[1], sz = u[2]
+		A[ 0] *= sx; A[ 1] *= sx; A[ 2] *= sx; A[ 3] *= sx
+		A[ 4] *= sy; A[ 5] *= sy; A[ 6] *= sy; A[ 7] *= sy
+		A[ 8] *= sz; A[ 9] *= sz; A[10] *= sz; A[11] *= sz
+	}
+
+	/**
+	 * Pre-applies a rotation around the X axis.
+	 *
+	 * Clockwise when X is pointing towards you (right-handed, Y right, Z up).
+	 * 
+	 * @param angle Angle in radians.
+	 **/
 	export function rotateX(A: MatA, angle: number): void {
 		const c = Math.cos(angle), s = Math.sin(angle)
 		const a00 = A[ 4], a01 = A[ 5], a02 = A[ 6], a03 = A[ 7]
@@ -71,6 +106,13 @@ export namespace MatA {
 		A[ 8] = c * a10 + s * a00; A[ 9] = c * a11 + s * a01; A[10] = c * a12 + s * a02; A[11] = c * a13 + s * a03
 	}
 
+	/**
+	 * Applies a rotation around the Y axis.
+	 *
+	 * Clockwise when Y is pointing towards you (right-handed, Z right, X up).
+	 * 
+	 * @param angle Angle in radians.
+	 **/
 	export function rotateY(A: MatA, angle: number): void {
 		const c = Math.cos(angle), s = Math.sin(angle)
 		const a00 = A[ 8], a01 = A[ 9], a02 = A[10], a03 = A[11]
@@ -79,6 +121,13 @@ export namespace MatA {
 		A[ 0] = c * a10 + s * a00; A[ 1] = c * a11 + s * a01; A[ 2] = c * a12 + s * a02; A[ 3] = c * a13 + s * a03
 	}
 
+	/**
+	 * Applies a rotation around the Z axis.
+	 *
+	 * Clockwise when Z is pointing towards you (right-handed, X right, Y up).
+	 * 
+	 * @param angle Angle in radians.
+	 **/
 	export function rotateZ(A: MatA, angle: number): void {
 		const c = Math.cos(angle), s = Math.sin(angle)
 		const a00 = A[ 0], a01 = A[ 1], a02 = A[ 2], a03 = A[ 3]
@@ -88,18 +137,24 @@ export namespace MatA {
 	}
 }
 
+/** Helper for chaining operations on a {@link MatA}. Construct with {@link MatA.compose} */
 export class MatAComposer {
 	constructor(private readonly A: MatA) {}
+	/** Gets the underlying {@link MatA}. WARNING: Not a copy! Supsequent operations still affect it. */
+	get(): MatA { return this.A }
 	/** See {@link MatA.translate}. */
 	translate(u: Vec3): this { MatA.translate(this.A, u); return this }
 	/** See {@link MatA.scaleX}. */
-	scaleX(s: number): this { MatA.scaleX(this.A, s); return this }
+	scaleX(s: number): this { 
+		MatA.scaleX(this.A, s); return this }
 	/** See {@link MatA.scaleY}. */
 	scaleY(s: number): this { MatA.scaleY(this.A, s); return this }
 	/** See {@link MatA.scaleZ}. */
 	scaleZ(s: number): this { MatA.scaleZ(this.A, s); return this }
 	/** See {@link MatA.scale}. */
 	scale(s: number): this { MatA.scale(this.A, s); return this }
+	/** See {@link MatA.scaleVector}. */
+	scaleVector(u: Vec3): this { MatA.scaleVector(this.A, u); return this }
 	/** See {@link MatA.rotateX}. */
 	rotateX(angle: number): this { MatA.rotateX(this.A, angle); return this }
 	/** See {@link MatA.rotateY}. */
@@ -108,18 +163,34 @@ export class MatAComposer {
 	rotateZ(angle: number): this { MatA.rotateZ(this.A, angle); return this }
 }
 
-export type Mat4Data = [
+/** Undecorated shape of {@link Mat4} */
+export type Mat4Shape = [
 	a00: number, a01: number, a02: number, a03: number,
 	a10: number, a11: number, a12: number, a13: number,
 	a20: number, a21: number, a22: number, a23: number,
 	a30: number, a31: number, a32: number, a33: number,
 ]
-export type Mat4 = Mat4Data & { readonly Mat4: unique symbol }
-export function Mat4(data: Mat4Data): Mat4 {
+
+/**
+ * 4x4 matrix.
+ * 
+ * Row-major order. Needs to be transposed for WebGL.
+ */
+export type Mat4 = Mat4Shape & { readonly Mat4: unique symbol }
+export function Mat4(data: Mat4Shape): Mat4 {
 	return data as Mat4
 }
 
 export namespace Mat4 {
+	/**
+	 * Creates a perspective projection matrix.
+	 *
+	 * @param fovy Vertical field of view in degrees. The angle between the top and bottom planes of the frustum.
+	 * @param width Width of the viewport (only aspect ratio matters).
+	 * @param height Height of the viewport (only aspect ratio matters).
+	 * @param near Distance to the near clipping plane.
+	 * @param far Distance to the far clipping plane.
+	 **/
 	export function perspective(params: {
 		fovy: number
 		width: number
