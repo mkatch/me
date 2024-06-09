@@ -18,10 +18,11 @@ class Demo {
 		fragmentShaderName: "hello",
 		Projection: "uniform mat4",
 		Model: "uniform mat4",
-		position: "in vec2",
+		time: "uniform float",
+		position: "in vec3",
 	} as const)
 	private readonly helloVertexBufferSchema = declareVertexBufferSchema({
-		position: "vec2",
+		position: "vec3",
 	})
 	private helloVertexArray!: WebGLVertexArrayObject
 
@@ -55,10 +56,10 @@ class Demo {
 		const helloVertices = []
 		const n = 50
 		for (let i = 0; i < n; ++i) {
-			const y = -1 + (2 * (i + 1)) / (n + 1)
+			const y = i / (n - 1)
 			for (let j = 0; j < n; ++j) {
-				const x = -1 + (2 * (j + 1)) / (n + 1)
-				helloVertices.push(x, y)
+				const x = j / (n - 1)
+				helloVertices.push(x, y, -1, x, y, +1)
 			}
 		}
 		const helloVertexBuffer = glu.createVertexBuffer(this.helloVertexBufferSchema)
@@ -115,15 +116,20 @@ class Demo {
 
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
-		const Model = MatA.eye()
-		MatA.rotateZ(Model, time)
-		MatA.rotateX(Model, 2 * time)
-		MatA.translate(Model, Vec3(0, 0, -2))
+		const Model = MatA.compose() //
+			.translate(Vec3(-0.5, -0.5, 0))
+			.scaleVector(Vec3(5, 5, 0.01))
+			.rotateZ(0.24 * Math.PI)
+			.rotateX(0.7 * Math.PI)
+			//.rotateY(-0.3 * Math.PI)
+			.translate(Vec3(0, -0.5, -3))
+			.get()
 
 		gl.useProgram(this.helloProgram.glid)
 		gl.uniformMatrix4fv(this.helloProgram.Projection.location, true, this.Projection)
 		gl.uniformMatrix4fv(this.helloProgram.Model.location, true, Model)
+		gl.uniform1f(this.helloProgram.time.location, time)
 		gl.bindVertexArray(this.helloVertexArray)
-		gl.drawArrays(gl.POINTS, 0, 50 * 50)
+		gl.drawArrays(gl.LINES, 0, 2 * 50 * 50)
 	}
 }
