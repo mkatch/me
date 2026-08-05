@@ -9,6 +9,65 @@ export function Vec3(...data: Vec3Shape): Vec3 {
 	return data as Vec3
 }
 
+export namespace Vec3 {
+	export function zero(): Vec3 {
+		return Vec3(0, 0, 0)
+	}
+
+	export function copy(v: Vec3, _: Vec3 = zero()): Vec3 {
+		_[0] = v[0]
+		_[1] = v[1]
+		_[2] = v[2]
+		return _
+	}
+
+	export function uniform(s: number): Vec3 {
+		return Vec3(s, s, s)
+	}
+
+	export function translated(P: Vec3, u: Vec3, _ = Vec3.zero()): Vec3 {
+		_[0] = P[0] + u[0]
+		_[1] = P[1] + u[1]
+		_[2] = P[2] + u[2]
+		return _
+	}
+
+	export function scaled(u: Vec3, s: number, _ = Vec3.zero()): Vec3 {
+		_[0] = u[0] * s
+		_[1] = u[1] * s
+		_[2] = u[2] * s
+		return _
+	}
+
+	export function span(P: Vec3, Q: Vec3, _ = Vec3.zero()): Vec3 {
+		_[0] = Q[0] - P[0]
+		_[1] = Q[1] - P[1]
+		_[2] = Q[2] - P[2]
+		return _
+	}
+
+	export function min(u: Vec3, v: Vec3, _ = Vec3.zero()): Vec3 {
+		_[0] = Math.min(u[0], v[0])
+		_[1] = Math.min(u[1], v[1])
+		_[2] = Math.min(u[2], v[2])
+		return _
+	}
+
+	export function max(u: Vec3, v: Vec3, _ = Vec3.zero()): Vec3 {
+		_[0] = Math.max(u[0], v[0])
+		_[1] = Math.max(u[1], v[1])
+		_[2] = Math.max(u[2], v[2])
+		return _
+	}
+
+	export function mid(P: Vec3, Q: Vec3, _ = Vec3.zero()): Vec3 {
+		_[0] = 0.5 * P[0] + 0.5 * Q[0]
+		_[1] = 0.5 * P[1] + 0.5 * Q[1]
+		_[2] = 0.5 * P[2] + 0.5 * Q[2]
+		return _
+	}
+}
+
 /** Undecorated shape of {@link MatA}. */
 export type MatAShape = [
 	number, number, number, number,
@@ -210,5 +269,40 @@ export namespace Mat4 {
 			 0,  0, -(near + far) / depth, -2 * near * far / depth,
 			 0,  0,                    -1,                       0,
 		])
+	}
+}
+
+export type Box3 = {
+	P0: Vec3,
+	P1: Vec3,
+}
+
+export namespace Box3 {
+	export function empty(): Box3 {
+		return {
+			P0: Vec3.uniform(Infinity),
+			P1: Vec3.uniform(-Infinity),
+		}
+	}
+	
+	export function expandAll(B: Box3, Ps: readonly Vec3[]): void {
+		const { P0, P1 } = B
+		for (const P of Ps) {
+			Vec3.min(P0, P, P0)
+			Vec3.max(P1, P, P1)
+		}
+	}
+
+	export function fromPoints(Ps: readonly Vec3[], _ = Box3.empty()): Box3 {
+		expandAll(_, Ps)
+		return _
+	}
+
+	export function span(B: Box3, _ = Vec3.zero()): Vec3 {
+		return Vec3.span(B.P0, B.P1, _)
+	}
+
+	export function center(B: Box3, _ = Vec3.zero()): Vec3 {
+		return Vec3.mid(B.P0, B.P1, _)
 	}
 }

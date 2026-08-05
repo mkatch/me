@@ -1,5 +1,5 @@
 import { WebGLUtilities, declareProgram, declareVertexBufferSchema } from "./glu"
-import { Mat4, MatA, Vec3 } from "./math"
+import { Box3, Mat4, MatA, Vec3 } from "./math"
 
 export function startDemo(host: HTMLElement) {
 	const demo = new Demo(host)
@@ -26,6 +26,21 @@ class Demo {
 	})
 	private helloVertexArray!: WebGLVertexArrayObject
 
+	private readonly letterProgram = declareProgram({
+		vertexShaderName: "letter",
+		fragmentShaderName: "letter",
+		Projection: "uniform mat4",
+		Model: "uniform mat4",
+		position: "in vec3",
+		color: "in vec3",
+	} as const)
+	private readonly letterVertexBufferSchema = declareVertexBufferSchema({
+		position: "vec3",
+		color: "vec3",
+	})
+	private letterVertexArray!: WebGLVertexArrayObject
+	private letterIndexCount = 0
+
 	constructor(private readonly host: HTMLElement) {
 		if (host.childNodes.length > 0) {
 			throw new Error("Demo host element is not empty.")
@@ -50,6 +65,8 @@ class Demo {
 		const { gl, glu } = this
 
 		gl.clearColor(0, 0, 0, 1)
+		gl.enable(gl.DEPTH_TEST)
+		gl.enable(gl.CULL_FACE)
 
 		await glu.loadProgram(this.helloProgram)
 
@@ -70,6 +87,34 @@ class Demo {
 			$.bindBuffer(helloVertexBuffer, (schema, $) => {
 				$.enableAttribute(program.position, schema.position)
 			})
+		})
+
+		await glu.loadProgram(this.letterProgram)
+
+		const letter = await loadModel("letter.obj")
+		const letterVertexBufferData = new Float32Array(letter.vertices.length * 6)
+		for (const [i, vertex] of letter.vertices.entries()) {
+			letterVertexBufferData[i * 6 + 0] = vertex[0]
+			letterVertexBufferData[i * 6 + 1] = vertex[1]
+			letterVertexBufferData[i * 6 + 2] = vertex[2]
+			letterVertexBufferData[i * 6 + 3] = Math.random()
+			letterVertexBufferData[i * 6 + 4] = Math.random()
+			letterVertexBufferData[i * 6 + 5] = Math.random()
+		}
+		const letterVertexBuffer = glu.createVertexBuffer(this.letterVertexBufferSchema)
+		gl.bindBuffer(gl.ARRAY_BUFFER, letterVertexBuffer.glid)
+		gl.bufferData(gl.ARRAY_BUFFER, letterVertexBufferData, gl.STATIC_DRAW)
+		const letterIndexBuffer = gl.createBuffer()
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, letterIndexBuffer)
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(letter.indices), gl.STATIC_DRAW)
+		this.letterIndexCount = letter.indices.length
+
+		this.letterVertexArray = glu.createVertexArray(this.letterProgram, (program, $) => {
+			$.bindBuffer(letterVertexBuffer, (schema, $) => {
+				$.enableAttribute(program.position, schema.position)
+				$.enableAttribute(program.color, schema.color)
+			})
+			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, letterIndexBuffer)
 		})
 
 		new ResizeObserver((entries) => {
@@ -116,7 +161,7 @@ class Demo {
 
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
-		const Model = MatA.compose() //
+		let Model = MatA.compose() //
 			.translate(Vec3(-0.5, -0.5, 0))
 			.scaleVector(Vec3(5, 5, 0.01))
 			.rotateZ(0.24 * Math.PI)
@@ -131,5 +176,76 @@ class Demo {
 		gl.uniform1f(this.helloProgram.time.location, time)
 		gl.bindVertexArray(this.helloVertexArray)
 		gl.drawArrays(gl.LINES, 0, 2 * 50 * 50)
+
+		Model = MatA.compose() //
+			.rotateX(time)
+			.rotateZ(time)
+			.translate(Vec3(0, 0, -1))
+			.get()
+		gl.useProgram(this.letterProgram.glid)
+		gl.uniformMatrix4fv(this.letterProgram.Projection.location, true, this.Projection)
+		gl.uniformMatrix4fv(this.letterProgram.Model.location, true, Model)
+		gl.bindVertexArray(this.letterVertexArray)
+		gl.drawElements(gl.TRIANGLES, this.letterIndexCount, gl.UNSIGNED_SHORT, 0)
 	}
+}
+
+async function loadModel(fileName: `${string}.obj`): Promise<{
+	vertices: Vec3[]
+	indices: number[]
+}> {
+	const THICKNESS = 0.2
+
+	const response = await fetch(`/src/demo/assets/${fileName}`)
+	const text = await response.text()
+
+	const vertices = [] as Vec3[]
+	const faces = [] as [number, number, number][]
+
+	for (const line of text.split("\n")) {
+		const t = line.split(" ")
+		switch (t[0]) {
+			case "v":
+				vertices.push(Vec3(parseFloat(t[1]), parseFloat(t[2]), parseFloat(t[3])))
+				break
+			case "f":
+				faces.push([parseInt(t[1]) - 1, parseInt(t[2]) - 1, parseInt(t[3]) - 1])
+				break
+		}
+	}
+
+	const bounds = Box3.fromPoints(vertices)
+	const frontTranslation = Vec3.span(Box3.center(bounds), Vec3(0, 0, -THICKNESS))
+	const scale = 1 / Math.max(...Box3.span(bounds))
+	console.log("span", Box3.span(bounds))
+	console.log(bounds, frontTranslation, scale)
+
+	const sideVertexCount = vertices.length
+	for (let i = 0; i < sideVertexCount; ++i) {
+		const front = vertices[i]
+		Vec3.translated(front, frontTranslation, front)
+		Vec3.scaled(front, scale, front)
+		const back = Vec3.copy(front)
+		back[2] += THICKNESS
+		vertices.push(back)
+	}
+
+	const edges = new Set<number>()
+	const indices = [] as number[]
+	const dside = sideVertexCount
+	for (const [a, b, c] of faces) {
+		indices.push(a, b, c, c + dside, b + dside, a + dside)
+		const a_ = a * dside, b_ = b * dside, c_ = c * dside // prettier-ignore
+		edges.delete(a + b_) || edges.add(a_ + b)
+		edges.delete(b + c_) || edges.add(b_ + c)
+		edges.delete(c + a_) || edges.add(c_ + a)
+	}
+
+	for (const edge of edges) {
+		const j = edge % dside, j_ = j + dside // prettier-ignore
+		const i = (edge - j) / dside, i_ = i + dside // prettier-ignore
+		indices.push(i, i_, j, j, i_, j_)
+	}
+
+	return { vertices, indices }
 }
